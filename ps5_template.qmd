@@ -240,6 +240,14 @@ II. "save_data_to_csv" function
 
 * b. Create Dynamic Scraper (PARTNER 2)
 
+1) The number of enforcement actions we get in the final dataframe : 1510
+2) The date and details of the earliest enforcement action it scraped
+- Date : January 3, 2023
+- Title : Podiatrist Pays $90,000 To Settle False Billing Allegations
+- Category : Criminal and Civil Actions
+- Agency : U.S. Attorney’s Office, Southern District of Texas
+- Link : https://oig.hhs.gov/fraud/enforcement/podiatrist-pays-90000-to-settle-false-billing-allegations/
+
 ```{python}
 import requests
 from bs4 import BeautifulSoup
@@ -359,6 +367,14 @@ if __name__ == "__main__":
 ```
 
 * c. Test Partner's Code (PARTNER 1)
+
+1) The number of enforcement actions we get in the final dataframe : 1510
+2) The date and details of the earliest enforcement action it scraped
+- Date : January 4, 2021
+- Title : The United States And Tennessee Resolve Claims With Three Providers For False Claims Act Liability Relating To ‘P-Stim’ Devices For A Total Of $1.72 Million
+- Category : Criminal and Civil Actions
+- Agency : U.S. Attorney's Office, Middle District of Tennessee
+- Link : https://oig.hhs.gov/fraud/enforcement/the-united-states-and-tennessee-resolve-claims-with-three-providers-for-false-claims-act-liability-relating-to-p-stim-devices-for-a-total-of-172-million/
 
 ```{python}
 import requests
@@ -483,7 +499,35 @@ if __name__ == "__main__":
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
 
 ```{python}
+import pandas as pd
+import altair as alt
 
+# Load the data from the CSV file
+file_path = "/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
+df_q3 = pd.read_csv(file_path)
+
+# Ensure the 'Date' column is in datetime format
+df_q3['Date'] = pd.to_datetime(df_q3['Date'], errors='coerce')
+
+# Create 'Year_Month' column formatted as YYYY-MM for monthly aggregation
+df_q3['Year_Month'] = df_q3['Date'].dt.to_period('M').astype(str)
+
+# Plot the line chart using Altair with transform_aggregate and groupby
+chart_1 = alt.Chart(df_q3).transform_aggregate(
+    count='count()',
+    groupby=['Year_Month']
+).mark_line(point=True).encode(
+    alt.X('Year_Month:O', title='Year-Month'),
+    alt.Y('count:Q', title='Number of Enforcement Actions')
+).properties(
+    title='Number of Enforcement Actions Over Time (Monthly Aggregated)',
+    width=600,
+    height=400
+).configure_axis(
+    labelAngle=45
+)
+
+chart_1
 ```
 
 ### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
@@ -495,7 +539,7 @@ import pandas as pd
 import altair as alt
 
 # Load the data from the CSV file
-file_path = r"C:\Users\Pei-Chin\AppData\Local\Programs\Microsoft VS Code\enforcement_actions_2021_1.csv"
+file_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
 df = pd.read_csv(file_path)
 
 # Convert the 'Date' column to datetime format and extract the year
@@ -506,7 +550,7 @@ df['Year'] = df['Date'].dt.year
 category_counts = df.groupby(['Year', 'Category']).size().reset_index(name='Count')
 
 # Create an Altair line chart for "Criminal and Civil Actions" vs "State Enforcement Agencies"
-chart = alt.Chart(category_counts).mark_line(point=True).encode(
+chart_2 = alt.Chart(category_counts).mark_line(point=True).encode(
     x=alt.X('Year:O', title='Year'),
     y=alt.Y('Count:Q', title='Number of Actions'),
     color=alt.Color('Category:N', title='Category'),
@@ -517,9 +561,7 @@ chart = alt.Chart(category_counts).mark_line(point=True).encode(
     height=400
 )
 
-chart.show()
-
-
+chart_2
 ```
 
 * based on five topics
@@ -529,7 +571,7 @@ import pandas as pd
 import altair as alt
 
 # Load the data from the CSV file
-file_path = r"C:\Users\Pei-Chin\AppData\Local\Programs\Microsoft VS Code\enforcement_actions_2021_1.csv"
+file_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
 df = pd.read_csv(file_path)
 
 # Convert the 'Date' column to datetime format and extract the year
@@ -557,7 +599,7 @@ df['Topic'] = df.apply(lambda x: assign_topic(x['Title']) if x['Category'] == 'C
 topic_counts = df[df['Category'] == 'Criminal and Civil Actions'].groupby(['Year', 'Topic']).size().reset_index(name='Count')
 
 # Create an Altair line chart for topics within "Criminal and Civil Actions"
-chart = alt.Chart(topic_counts).mark_line(point=True).encode(
+chart_3 = alt.Chart(topic_counts).mark_line(point=True).encode(
     x=alt.X('Year:O', title='Year'),
     y=alt.Y('Count:Q', title='Number of Actions'),
     color=alt.Color('Topic:N', title='Topic'),
@@ -568,9 +610,7 @@ chart = alt.Chart(topic_counts).mark_line(point=True).encode(
     height=400
 )
 
-chart.show()
-
-
+chart_3
 ```
 
 ## Step 4: Create maps of enforcement activity
@@ -585,7 +625,7 @@ import altair as alt
 import json
 
 # Step 1: Load the enforcement data
-file_path = r"C:\Users\Pei-Chin\AppData\Local\Programs\Microsoft VS Code\enforcement_actions_2021_1.csv"
+file_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
 df = pd.read_csv(file_path)
 
 # Step 2: Filter for state-level enforcement actions
@@ -599,7 +639,7 @@ state_counts = state_actions['State'].value_counts().reset_index()
 state_counts.columns = ['State', 'Enforcement_Actions']
 
 # Step 5: Load the state boundaries shapefile
-state_shapefile_path = r"C:\Users\Pei-Chin\hi Dropbox\Lu Pei-Chin\cb_2018_us_state_500k\cb_2018_us_state_500k.shp"
+state_shapefile_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/cb_2018_us_state_500k/cb_2018_us_state_500k.shp"
 states = gpd.read_file(state_shapefile_path)
 
 # Step 6: Merge the state shapefile with the enforcement data
@@ -626,9 +666,7 @@ map_chart = alt.Chart(merged_states_data).mark_geoshape().encode(
     type='albersUsa'  # Projection for continental US
 )
 
-map_chart.show()
-
-
+map_chart
 ```
 
 
