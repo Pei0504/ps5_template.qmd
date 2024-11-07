@@ -490,12 +490,77 @@ if __name__ == "__main__":
 * based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
 
 ```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the data from the CSV file
+file_path = r"C:\Users\Pei-Chin\AppData\Local\Programs\Microsoft VS Code\enforcement_actions_2021_1.csv"
+df = pd.read_csv(file_path)
+
+# Convert the 'Date' column to datetime format and extract the year
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+df['Year'] = df['Date'].dt.year
+
+# Calculate the count of "Criminal and Civil Actions" vs "State Enforcement Agencies" by year
+category_counts = df.groupby(['Year', 'Category']).size().unstack(fill_value=0)
+
+# Plot line chart for "Criminal and Civil Actions" vs "State Enforcement Agencies"
+plt.figure(figsize=(7, 6))
+category_counts.plot(kind='line', marker='o')
+plt.title('Number of Enforcement Actions by Category')
+plt.xlabel('Year')
+plt.ylabel('Number of Actions')
+plt.legend(title='Category', bbox_to_anchor=(1, 1), loc='upper left')
+plt.xticks(df['Year'].dropna().unique(), rotation=45)
+plt.tight_layout()
+plt.show()
 
 ```
 
 * based on five topics
 
 ```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the data from the CSV file
+file_path = r"C:\Users\Pei-Chin\AppData\Local\Programs\Microsoft VS Code\enforcement_actions_2021_1.csv"
+df = pd.read_csv(file_path)
+
+# Convert the 'Date' column to datetime format and extract the year
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+df['Year'] = df['Date'].dt.year
+
+# Define a function to assign topics based on multiple keywords
+def assign_topic(title):
+    title = title.lower()  # Convert title to lowercase for keyword matching
+    if any(keyword in title for keyword in ['health', 'medicare', 'medicaid', 'hospital', 'clinic']):
+        return 'Health Care Fraud'
+    elif any(keyword in title for keyword in ['bank', 'financial', 'loan', 'securities', 'investment']):
+        return 'Financial Fraud'
+    elif any(keyword in title for keyword in ['drug', 'opioid', 'narcotics', 'substance', 'pharmacy']):
+        return 'Drug Enforcement'
+    elif any(keyword in title for keyword in ['bribery', 'corruption', 'kickback', 'bribe']):
+        return 'Bribery/Corruption'
+    else:
+        return 'Other'
+
+# Apply topic assignment only for 'Criminal and Civil Actions' category
+df['Topic'] = df.apply(lambda x: assign_topic(x['Title']) if x['Category'] == 'Criminal and Civil Actions' else None, axis=1)
+
+# Calculate the count of each topic within "Criminal and Civil Actions" by year
+topic_counts = df[df['Category'] == 'Criminal and Civil Actions'].groupby(['Year', 'Topic']).size().unstack(fill_value=0)
+
+# Plot line chart for topics within "Criminal and Civil Actions"
+plt.figure(figsize=(7, 6))
+topic_counts.plot(kind='line', marker='o')
+plt.title('Number of Criminal and Civil Actions by Topic')
+plt.xlabel('Year')
+plt.ylabel('Number of Actions')
+plt.legend(title='Topic', bbox_to_anchor=(1, 1), loc='upper left')
+plt.xticks(df['Year'].dropna().unique(), rotation=45)
+plt.tight_layout()
+plt.show()
 
 ```
 
