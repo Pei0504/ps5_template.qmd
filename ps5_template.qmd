@@ -673,7 +673,72 @@ map_chart
 ### 2. Map by District (PARTNER 2)
 
 ```{python}
+# First, clean the df_q3 dataset.
 
+import pandas as pd
+
+# Step 1: Extract district names that contain "District of ..." with any preceding text
+# Store the result directly in a new DataFrame, df_q3_district
+df_q3_district = df_q3.copy()
+df_q3_district['District'] = df_q3_district['Agency'].str.extract(r'([A-Za-z\s]+District of [A-Za-z\s]+)')
+
+# Step 2: Remove "s Office" from the extracted District names
+df_q3_district['District'] = df_q3_district['District'].str.replace(r"s Office", "", regex=True).str.strip()
+
+# Fix misspelled name of District
+df_q3_district['District'] = df_q3_district['District'].str.replace('District of Idaho Boise', 'District of Idaho', regex=False)
+df_q3_district['District'] = df_q3_district['District'].str.replace('District of Pennsylvani', 'District of Pennsylvania', regex=False)
+df_q3_district['District'] = df_q3_district['District'].str.replace('Southern District of Florida and U', 'Southern District of Florida', regex=False)
+df_q3_district['District'] = df_q3_district['District'].str.replace('Southern District of Texas and U', 'Southern District of Texas', regex=False)
+df_q3_district['District'] = df_q3_district['District'].str.replace('Western District of Kentucky and U', 'Western District of Kentucky', regex=False)
+
+# Step 3: Drop rows where 'District' is NaN
+df_q3_district = df_q3_district.dropna(subset=['District'])
+
+# Display the first few rows of the new DataFrame to verify
+df_q3_district[['Agency', 'District']].head()
+```
+
+```{python}
+# Next, create a map.
+
+import geopandas as gpd
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+# Load the shapefile
+shapefile_path = "/Users/sohyunlim/Desktop/python-ps5-shilm/US Attorney Districts Shapefile simplified_20241107/geo_export_615ad4c8-8694-4e4a-b9e8-13417c441590.shp"  
+districts_gdf = gpd.read_file(shapefile_path)
+
+district_counts = df_q3_district['District'].value_counts().reset_index()
+district_counts.columns = ['District', 'Count']
+
+# Merge the enforcement data with shapefile data on district names
+merged_gdf = districts_gdf.merge(district_counts, left_on='judicial_d', right_on='District', how='left')
+merged_gdf['Count'] = merged_gdf['Count'].fillna(0)  # Fill missing values with 0
+
+# Convert the GeoDataFrame to GeoJSON format
+merged_gdf_json = json.loads(merged_gdf.to_json())
+merged_gdf_data = alt.Data(values=merged_gdf_json['features'])
+
+# Create an Altair choropleth map
+map_chart_district = alt.Chart(merged_gdf_data).mark_geoshape().encode(
+    color=alt.Color('properties.Count:Q', title='Enforcement Actions', 
+                    scale=alt.Scale(scheme='orangered')),
+    tooltip=[
+        alt.Tooltip('properties.District:N', title='State'),
+        alt.Tooltip('properties.Count:Q', title='Enforcement Actions')
+    ]
+).properties(
+    title="Number of Enforcement Actions by District in 2021",
+    width=800,
+    height=500
+).project(
+    type='albersUsa'  # Projection for continental US
+)
+
+map_chart_district
 ```
 
 ## Extra Credit
