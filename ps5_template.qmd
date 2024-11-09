@@ -116,7 +116,6 @@ print(df.head())
 ### 2. Crawling (PARTNER 1)
 
 ```{python}
-# revised code - right agency information
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -164,8 +163,6 @@ for action in soup.select("li.usa-card"):  # Adjust this selector based on main 
                 print(f"Agency <li> tag not found on {link}")
         else:
             print(f"'Agency:' label not found on {link}")
-            # Optional: Print HTML structure to debug why 'Agency:' label is missing
-            print(detail_soup.prettify())
         
     # Store the data in the list
     data.append({
@@ -188,53 +185,68 @@ print(df.head())
 * a. Pseudo-Code (PARTNER 2)
 
 I. "dynamic_scraper" function
+
 1. Function Start: 
     - Define a function dynamic_scraper that takes month and year as input parameters.
+
 2. Check Year Condition:
     - If year is less than 2013, print a message indicating that data is only available from 2013 onwards and exit the function.
+
 3. Initialize Variables:
     - Define the base URL for the HHS OIG enforcement actions page.
     - Create a start_date variable with the given year and month as the starting point for scraping.
     - Initialize an empty list data to store the enforcement action details.
     - Set page to 1 to start scraping from the first page.
+
 4. Loop Through Each Page:
     - Repeat the following steps for each page until there are no more enforcement actions to process.
     - Here, a while loop is used to scrape data from each page until there are no more pages left, in order to continue scraping as long as there is data on each page and stops automatically when no data is found.
         - We use while True to create an infinite loop initially and break out of the loop when we reach the last page or find no further data.
         - Page Number Increment: We start from the first page and increase the page number by 1 with each iteration to move to the next page.
         - Break Condition: The loop stops if no more enforcement actions are found on a page or if only data older than the specified start date is available.
+
 5. Request Page:
     - Construct the page URL using the base URL and the current page number.
     - Send a GET request to fetch the page content and parse it with BeautifulSoup.
+
 6. Find All Enforcement Actions:
     - Search for all enforcement action elements (li.usa-card) on the page.
     - If no actions are found, print a message indicating the end of available data or a possible change in page structure, then exit the loop.
+
 7. Process Each Enforcement Action:
     - For each action found on the page, extract the following details:
         - Title: Locate the title tag and extract the title text.
         - Link: Get the link to the detailed page of the action.
         - Date: Locate the date tag, extract the date text, and parse it as a datetime object. If the date is older than start_date, print a message and stop further scraping by saving and returning the data collected so far.
         - Category: Extract the category information from the specified list tag.
+
 8. Visit Detail Page for Agency Name:
     - If the action has a valid link, follow the link to the detailed page.
     - Parse the detail page with BeautifulSoup.
     - Find the "Agency:" span tag and retrieve the agency name from the corresponding li element.
+
 9. Store Action Details:
     - Append a dictionary containing the action's title, date, category, agency, and link to the data list.
+
 10. Progress Update:
     - Every 20 pages, print the number of actions collected so far and display the last few entries in data as a preview.
+
 11. Next Page:
     - Increment the page number by 1 and add a 1-second delay before making the next page request.
+
 12. Save Data to CSV:
     - Once all pages are processed or scraping is stopped due to the date condition, call save_data_to_csv with the data collected, month, and year.
 
 II. "save_data_to_csv" function
+
 1. Convert to DataFrame:
     - Convert the collected data list into a DataFrame.
+
 2. Save as CSV:
     - Define the csv_filename based on the given year and month.
     - Try saving the DataFrame to a CSV file with utf-8-sig encoding.
     - If successful, print a confirmation message; if there is an error, print the error message.
+
 3. Return DataFrame:
     - Return the DataFrame for further use or inspection.
 
@@ -249,6 +261,8 @@ II. "save_data_to_csv" function
 - Link : https://oig.hhs.gov/fraud/enforcement/podiatrist-pays-90000-to-settle-false-billing-allegations/
 
 ```{python}
+#| eval: false
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -361,14 +375,14 @@ if __name__ == "__main__":
     df_2023 = dynamic_scraper(1, 2023)
     if df_2023 is not None and not df_2023.empty:
         print("Number of enforcement actions since January 2023:", len(df_2023))
-        print("Earliest enforcement action:", df_2023.iloc[-1])
+        # print("Earliest enforcement action:", df_2023.iloc[-1])
     else:
         print("No enforcement actions found for the specified period.")
 ```
 
 * c. Test Partner's Code (PARTNER 1)
 
-1) The number of enforcement actions we get in the final dataframe : 1510
+1) The number of enforcement actions we get in the final dataframe : 2998
 2) The date and details of the earliest enforcement action it scraped
 - Date : January 4, 2021
 - Title : The United States And Tennessee Resolve Claims With Three Providers For False Claims Act Liability Relating To ‘P-Stim’ Devices For A Total Of $1.72 Million
@@ -377,6 +391,8 @@ if __name__ == "__main__":
 - Link : https://oig.hhs.gov/fraud/enforcement/the-united-states-and-tennessee-resolve-claims-with-three-providers-for-false-claims-act-liability-relating-to-p-stim-devices-for-a-total-of-172-million/
 
 ```{python}
+#| eval: false
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -503,7 +519,7 @@ import pandas as pd
 import altair as alt
 
 # Load the data from the CSV file
-file_path = "/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
+file_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/enforcement_actions_2021_1.csv"
 df_q3 = pd.read_csv(file_path)
 
 # Ensure the 'Date' column is in datetime format
@@ -549,16 +565,19 @@ df['Year'] = df['Date'].dt.year
 # Calculate the count of "Criminal and Civil Actions" vs "State Enforcement Agencies" by year
 category_counts = df.groupby(['Year', 'Category']).size().reset_index(name='Count')
 
-# Create an Altair line chart for "Criminal and Civil Actions" vs "State Enforcement Agencies"
-chart_2 = alt.Chart(category_counts).mark_line(point=True).encode(
+# Filter for specific categories: "Criminal and Civil Actions" and "State Enforcement Agencies"
+filtered_categories = category_counts[category_counts['Category'].isin(['Criminal and Civil Actions', 'State Enforcement Agencies'])]
+
+# Chart 1: Line chart comparing "Criminal and Civil Actions" vs "State Enforcement Agencies"
+chart_2 = alt.Chart(filtered_categories).mark_line(point=True).encode(
     x=alt.X('Year:O', title='Year'),
     y=alt.Y('Count:Q', title='Number of Actions'),
     color=alt.Color('Category:N', title='Category'),
     tooltip=['Year', 'Category', 'Count']
 ).properties(
-    title='Number of Enforcement Actions by Category',
-    width=700,
-    height=400
+    title='Criminal and Civil Actions vs State Enforcement Agencies by Year',
+    width=450,
+    height=300
 )
 
 chart_2
@@ -578,7 +597,7 @@ df = pd.read_csv(file_path)
 df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 df['Year'] = df['Date'].dt.year
 
-# Define a function to assign topics based on multiple keywords
+# Define a function to assign topics based on multiple keywords within the "Criminal and Civil Actions" category
 def assign_topic(title):
     title = title.lower()  # Convert title to lowercase for keyword matching
     if any(keyword in title for keyword in ['health', 'medicare', 'medicaid', 'hospital', 'clinic']):
@@ -592,11 +611,14 @@ def assign_topic(title):
     else:
         return 'Other'
 
-# Apply topic assignment only for 'Criminal and Civil Actions' category
+# Apply the topic assignment only for "Criminal and Civil Actions" category
 df['Topic'] = df.apply(lambda x: assign_topic(x['Title']) if x['Category'] == 'Criminal and Civil Actions' else None, axis=1)
 
+# Filter the data to include only the "Criminal and Civil Actions" category
+criminal_actions_df = df[df['Category'] == 'Criminal and Civil Actions']
+
 # Calculate the count of each topic within "Criminal and Civil Actions" by year
-topic_counts = df[df['Category'] == 'Criminal and Civil Actions'].groupby(['Year', 'Topic']).size().reset_index(name='Count')
+topic_counts = criminal_actions_df.groupby(['Year', 'Topic']).size().reset_index(name='Count')
 
 # Create an Altair line chart for topics within "Criminal and Civil Actions"
 chart_3 = alt.Chart(topic_counts).mark_line(point=True).encode(
@@ -606,8 +628,8 @@ chart_3 = alt.Chart(topic_counts).mark_line(point=True).encode(
     tooltip=['Year', 'Topic', 'Count']
 ).properties(
     title='Number of Criminal and Civil Actions by Topic',
-    width=700,
-    height=400
+    width=450,
+    height=300
 )
 
 chart_3
@@ -618,7 +640,6 @@ chart_3
 ### 1. Map by State (PARTNER 1)
 
 ```{python}
-# Import necessary libraries
 import pandas as pd
 import geopandas as gpd
 import altair as alt
@@ -660,8 +681,8 @@ map_chart = alt.Chart(merged_states_data).mark_geoshape().encode(
     ]
 ).properties(
     title="Number of Enforcement Actions by State in 2021",
-    width=800,
-    height=500
+    width=500,
+    height=300
 ).project(
     type='albersUsa'  # Projection for continental US
 )
@@ -708,7 +729,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Load the shapefile
-shapefile_path = "/Users/sohyunlim/Desktop/python-ps5-shilm/US Attorney Districts Shapefile simplified_20241107/geo_export_615ad4c8-8694-4e4a-b9e8-13417c441590.shp"  
+shapefile_path = r"/Users/sohyunlim/Desktop/python-ps5-shilm/US Attorney Districts Shapefile simplified_20241107/geo_export_615ad4c8-8694-4e4a-b9e8-13417c441590.shp"
 districts_gdf = gpd.read_file(shapefile_path)
 
 district_counts = df_q3_district['District'].value_counts().reset_index()
@@ -732,8 +753,8 @@ map_chart_district = alt.Chart(merged_gdf_data).mark_geoshape().encode(
     ]
 ).properties(
     title="Number of Enforcement Actions by District in 2021",
-    width=800,
-    height=500
+    width=500,
+    height=300
 ).project(
     type='albersUsa'  # Projection for continental US
 )
@@ -745,7 +766,21 @@ map_chart_district
 
 ### 1. Merge zip code shapefile with population
 ```{python}
+import geopandas as gpd
+import pandas as pd
 
+# Load the shapefile
+shapefile_path_zipcode = "/Users/sohyunlim/Desktop/python-ps5-shilm/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
+zipcode = gpd.read_file(shapefile_path_zipcode)
+
+# Load the csv file
+file_path_ppl = r"/Users/sohyunlim/Desktop/python-ps5-shilm/DECENNIALDHC2020.P1_2024-11-08T093912/DECENNIALDHC2020.P1-Data.csv"
+ppl = pd.read_csv(file_path_ppl, header=0)
+ppl = ppl.drop(0).reset_index(drop=True)  
+ppl = ppl.loc[:, ~ppl.columns.str.contains('Unnamed: 3')]
+
+# Merge zipcode shp with ppl csv
+zipcode_ppl = zipcode.merge(ppl, left_on='GEO_ID', right_on='GEO_ID')
 ```
 
 ### 2. Conduct spatial join
@@ -754,6 +789,3 @@ map_chart_district
 ```
 
 ### 3. Map the action ratio in each district
-```{python}
-
-```
